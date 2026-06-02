@@ -1,29 +1,34 @@
+import logging
+from fastapi import FastAPI
+from pydantic import BaseModel
 import json
+import os
 from openai import OpenAI
 from dotenv import load_dotenv
-import pandas as pd
-import os
-import logging
-      
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-# Cargar variables entorno
+
+app = FastAPI()
 load_dotenv()
 
-# Cliente Groq
 client = OpenAI(
     api_key=os.getenv("GROQ_API_KEY"),
     base_url="https://api.groq.com/openai/v1"
 )
 
-# Leer CSV
-df = pd.read_csv("tickets.csv")
+class Ticket(BaseModel):
+    ticket: str
 
-# Lista resultados
-types = []
-priorities = []
+
+@app.get("/")
+def home():
+    return {"message": "API funcionando"}
+
+
+@app.post("/classify")
+def classify(data: Ticket):
+    
+    result = classify_ticket(data.ticket)
+
+    return result
 
 def classify_ticket(ticket):
     prompt = f"""
@@ -68,23 +73,3 @@ Formato EXACTO:
         "priority":"unknown"
         }
     return parsed_result
-
-for ticket in df["ticket"]:
-
-    parsed_result=classify_ticket(ticket)
-
-    print("\n===================")
-    logging.info(parsed_result["type"])
-    logging.info(parsed_result["priority"])
-
-    types.append(parsed_result["type"])
-    priorities.append(parsed_result["priority"])
-
-# Agregar resultados al dataframe
-df["type"] = types
-df["priority"] = priorities
-
-# Guardar CSV final
-df.to_csv("results.csv", index=False)
-
-print("\nProceso completado.")
