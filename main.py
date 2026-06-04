@@ -1,22 +1,15 @@
-import json
-from openai import OpenAI
-from dotenv import load_dotenv
 import pandas as pd
-import os
 import logging
-      
+from dotenv import load_dotenv
+from services.classifier import classify_ticket
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
 # Cargar variables entorno
 load_dotenv()
-
-# Cliente Groq
-client = OpenAI(
-    api_key=os.getenv("GROQ_API_KEY"),
-    base_url="https://api.groq.com/openai/v1"
-)
 
 # Leer CSV
 df = pd.read_csv("tickets.csv")
@@ -24,65 +17,25 @@ df = pd.read_csv("tickets.csv")
 # Lista resultados
 types = []
 priorities = []
-
-def classify_ticket(ticket):
-    prompt = f"""
-    Clasifica este ticket:
-
-    {ticket}
-
-    IMPORTANTE:
-- Responde SOLO JSON válido.
-- No expliques nada.
-- No agregues texto extra.
-- No uses markdown.
-- No uses ```.
-
-Formato EXACTO:
-
-{{
-  "type": "",
-  "priority": ""
-}}
-"""
-    response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        temperature=0,
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
-
-    result = response.choices[0].message.content
-
-    try:
-        parsed_result = json.loads(result)
-    except:
-        logging.error("Error parsing JSON")
-
-        parsed_result= {
-        "type":"unknown",
-        "priority":"unknown"
-        }
-    return parsed_result
+summaries = []
 
 for ticket in df["ticket"]:
 
-    parsed_result=classify_ticket(ticket)
+    parsed_result = classify_ticket(ticket)
 
     print("\n===================")
-    logging.info(parsed_result["type"])
-    logging.info(parsed_result["priority"])
 
+    logging.info(parsed_result.get("type"))
+    logging.info(parsed_result.get("priority"))
+    logging.info(parsed_result.get("summary"))
     types.append(parsed_result["type"])
     priorities.append(parsed_result["priority"])
+    summaries.append(parsed_result["summary"])
 
 # Agregar resultados al dataframe
 df["type"] = types
 df["priority"] = priorities
+df["summary"] = summaries
 
 # Guardar CSV final
 df.to_csv("results.csv", index=False)
