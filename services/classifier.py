@@ -35,6 +35,16 @@ MEDIUM
 HIGH
 CRITICAL
 
+needs_review debe ser:
+
+true:
+- Si el ticket es ambiguo
+- Si la categoria o prioridad no es clara
+- SI pofria pertencer a mas de una categoria o prioridad
+
+false:
+- Si el ticket es claro y no ambiguo
+
 Responde únicamente JSON válido.
 
 Formato exacto:
@@ -42,7 +52,9 @@ Formato exacto:
 {{
     "type": "",
     "priority": "",
-    "summary": ""
+    "summary": "",
+    "needs_review": false
+
 }}
 """
 
@@ -69,7 +81,8 @@ Formato exacto:
         parsed_result = {
             "type": "unknown",
             "priority": "unknown",
-            "summary": "No summary available"
+            "summary": "No summary available",
+            "needs_review": false
         }
 
     return parsed_result
