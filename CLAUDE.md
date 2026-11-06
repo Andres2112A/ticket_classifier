@@ -12,7 +12,7 @@ Clasificador de tickets de soporte: reglas de negocio deterministas + LLM (Groq,
 ## Entorno
 
 - macOS Ventura 13.7.8, Intel x64.
-- Entorno virtual: `.venv/` con Python 3.14.4 (usar este). Existe también `venv/` duplicado, pendiente de borrar.
+- Entorno virtual: `venv/` con Python 3.14.4 (usar este; no borrarlo). `.venv/` no existe.
 - Credenciales en `.env` (`GROQ_API_KEY`). Nunca commitear `.env`.
 - Docker no está disponible en este Mac.
 
@@ -21,7 +21,7 @@ Clasificador de tickets de soporte: reglas de negocio deterministas + LLM (Groq,
 - `app.py`: FastAPI (`GET /`, `POST /classify`).
 - `main.py`: lote `tickets.csv` → `results.csv`.
 - `services/classifier.py`: prompt + llamada a Groq + parseo JSON. Ya NO devuelve `priority` (la decide el motor de reglas).
-- `services/priority_rules.py`: motor de prioridades. Hoy es un stub que devuelve `None`.
+- `services/priority_rules.py`: reglas de prioridad. Hoy tiene `PriorityRule` y `AccountCompromiseRule`; falta el resto de reglas y el motor.
 - `test_priority.py`: pruebas temporales (pasarán a tests automatizados).
 - `business_rules.md`, `workflow_design.md`: fuente de verdad de reglas y flujo.
 
@@ -46,18 +46,17 @@ Clasificador de tickets de soporte: reglas de negocio deterministas + LLM (Groq,
 
 ## Problemas conocidos
 
-1. Ningún componente calcula la prioridad hoy (se quitó del LLM y las reglas están vacías); `main.py` y `/classify` no devuelven prioridad.
-2. Fallback de `classifier.py` al fallar el JSON devuelve `type: "unknown"`, `needs_review: False`; debe ser `OTHER` y `True` (ver `workflow_design.md`).
-3. Prompt del clasificador con errores ("pofria pertencer") y criterios de `needs_review` que no coinciden con `business_rules.md`.
-4. `.gitignore` no excluye `.venv/`; además ignora `tickets.csv` (debería versionarse).
-5. Git: rama local `feature/sqlite` sin commits nuevos; docs y cambios V2 no están en GitHub. En GitHub, `main` solo tiene README+LICENSE y la V1 vive en `master` (historiales separados).
-6. `results.csv` de V1: "No puedo iniciar sesión" salió HIGH (debería ser MEDIUM) y el `summary` copia el ticket.
+1. La prioridad no se calcula en el flujo real: se quitó del LLM y `AccountCompromiseRule` no está conectada; `main.py` y `/classify` no devuelven prioridad.
+2. El formato de respuesta del prompt ya no incluye `needs_review`, pero `main.py:32` lo lee con `parsed_result["needs_review"]`: posible `KeyError` cuando el LLM responde bien. `/classify` devolvería la respuesta sin ese campo.
+3. Prompt del clasificador: la coma tras `summary` en el formato de ejemplo no es JSON válido, sigue la errata "pertencer" y los criterios de `needs_review` no coinciden con `business_rules.md`.
+4. Git: en GitHub, `main` solo tiene README+LICENSE y la V1 vive en `master` (historiales separados). El trabajo V2 está en `feature/priority-engine`.
+5. `results.csv` de V1: "No puedo iniciar sesión" salió HIGH (debería ser MEDIUM) y el `summary` copia el ticket.
 
 ## Plan acordado
 
-1. Asegurar el trabajo: borrar `venv/`, corregir `.gitignore`, rama `feature/priority-engine`, commit y push.
-2. Corregir el clasificador (fallback, prompt, criterios de revisión).
-3. `PriorityRule` + `AccountCompromiseRule` y probar: "Mi cuenta fue hackeada" → CRITICAL; "Quiero actualizar mi correo" → None; "Mi pago fue rechazado" → None.
+1. ~~Asegurar el trabajo: corregir `.gitignore`, rama `feature/priority-engine`, commit y push.~~ Hecho.
+2. Corregir el clasificador (`needs_review`, prompt, criterios de revisión). El fallback ya está corregido.
+3. ~~`PriorityRule` + `AccountCompromiseRule` y probar: "Mi cuenta fue hackeada" → CRITICAL; "Quiero actualizar mi correo" → None; "Mi pago fue rechazado" → None.~~ Hecho.
 4. Resto de reglas, una por una, y el motor con precedencia.
 5. Reconectar la prioridad en `main.py` y `/classify`.
 6. Convertir los ejemplos de `business_rules.md` en tests automatizados.
