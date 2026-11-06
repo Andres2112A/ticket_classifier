@@ -28,19 +28,12 @@ DELIVERY
 TECHNICAL
 OTHER
 
-SOLO puedes usar estas prioridades:
-
-LOW
-MEDIUM
-HIGH
-CRITICAL
-
 needs_review debe ser:
 
 true:
 - Si el ticket es ambiguo
-- Si la categoria o prioridad no es clara
-- SI pofria pertencer a mas de una categoria o prioridad
+- Si la categoria no es clara
+- SI podria pertencer a mas de una categoria
 
 false:
 - Si el ticket es claro y no ambiguo
@@ -51,9 +44,7 @@ Formato exacto:
 
 {{
     "type": "",
-    "priority": "",
     "summary": "",
-    "needs_review": false
 
 }}
 """
@@ -79,10 +70,10 @@ Formato exacto:
         logging.error(f"Error parsing JSON: {e}")
 
         parsed_result = {
-            "type": "unknown",
-            "priority": "unknown",
-            "summary": "No summary available",
-            "needs_review": false
+            
+            "type": "OTHER",
+            "summary": "Unable to process ticket.",
+            "needs_review": True
         }
 
     return parsed_result

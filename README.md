@@ -147,8 +147,10 @@ http://127.0.0.1:8000/docs
 
 ```json
 {
-  "type": "Error de cobro",
-  "priority": "Alta"
+  "type": "PAYMENT",
+  "priority": "HIGH",
+  "summary": "Customer reports a duplicate charge.",
+  "needs_review": false
 }
 ```
 
